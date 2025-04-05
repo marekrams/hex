@@ -124,6 +124,11 @@ class NSpin12(meta_operators):
         val = [v if v != 0 else -1 for v in val]
         N = len(val)
 
+        if N == 0:
+            vec = Tensor(config=self.config, s=(1,))
+            vec.set_block(Ds=(2**N,), val=[1])
+            return vec
+
         vs = {1: np.array([1, 1], dtype=int),
              -1: np.array([1, -1], dtype=int)}
 
