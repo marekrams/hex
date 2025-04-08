@@ -11,7 +11,7 @@ import yastn.tn.fpeps as peps
 from routines import NSpin12, MapHex127_r4, MapHex127_r3, gates_from_HH, measure_H_ctm, measure_H_mps
 
 
-@ray.remote
+@ray.remote(num_cpus=8)
 def run_test(p, r, D, which, D2, which2, chi):
     #
     print(f"Starting {p=} {r=} {D=} {which=} {D2=} {which2=} {chi=}")
@@ -49,9 +49,9 @@ def run_test(p, r, D, which, D2, which2, chi):
     # run evolution
     #
     opts_svd_evol = {"D_total": D, "tol": 1e-12}
-    env = peps.EnvLBP(psi, which=which) if "LBP" in which else peps.EnvNTU(psi, which=which)
-    if "LBP" in which:
-        env.lbp_(max_sweeps=50, diff_tol=1e-8)
+    env = peps.EnvBP(psi, which=which) if "BP" in which else peps.EnvNTU(psi, which=which)
+    if "BP" in which:
+        env.iterate_(max_sweeps=50, diff_tol=1e-8)
     #
     infoss = []
     t0 = time.time()
@@ -59,26 +59,26 @@ def run_test(p, r, D, which, D2, which2, chi):
         gates = gates_from_HH(HHC, gamma)
         infos = peps.evolution_step_(env, gates, opts_svd=opts_svd_evol, symmetrize=False)
         infoss.append(infos)
-        if "LBP" in which:
-            env.lbp_(max_sweeps=50, diff_tol=1e-8)
+        if "BP" in which:
+            env.iterate_(max_sweeps=50, diff_tol=1e-8)
         gates = gates_from_HH(HHM, beta)
         infos = peps.evolution_step_(env, gates, opts_svd=opts_svd_evol, symmetrize=False)
-        if "LBP" in which:
-            env.lbp_(max_sweeps=50, diff_tol=1e-8)
+        if "BP" in which:
+            env.iterate_(max_sweeps=50, diff_tol=1e-8)
         Delta = peps.accumulated_truncation_error(infoss, statistics='mean')
         print(f"Step: {step}; Evolution time: {time.time() - t0:3.2f}; Truncation error: {Delta:0.6f}")
     #
     if D2 < D:
         print(" Truncating ")
         if which2 != which:
-            env = peps.EnvLBP(psi, which=which2) if "LBP" in which2 else peps.EnvNTU(psi, which=which2)
-            if "LBP" in which2:
-                env.lbp_(max_sweeps=50, diff_tol=1e-8)
+            env = peps.EnvBP(psi, which=which2) if "BP" in which2 else peps.EnvNTU(psi, which=which2)
+            if "BP" in which2:
+                env.iterate_(max_sweeps=50, diff_tol=1e-8)
 
         opts_svd_trun = {"D_total": D2}
         info2 = peps.truncate_(env, opts_svd=opts_svd_trun)
-        if "LBP" in which:
-            env.lbp_(max_sweeps=50, diff_tol=1e-8)
+        if "BP" in which:
+            env.iterate_(max_sweeps=50, diff_tol=1e-8)
         Delta2 = peps.accumulated_truncation_error([info2], statistics='mean')
         print(f"Truncation time: {time.time() - t0:3.2f}; Truncation error: {Delta2:0.6f}")
     else:
@@ -93,9 +93,9 @@ def run_test(p, r, D, which, D2, which2, chi):
         print(f"Energy for {p=}: {eng:0.4f}")
     else:
         print(" Calculating nergy from BP")
-        if (D2 < D and 'LBP' not in which2) or 'LBP' not in which:
-            env = peps.EnvLBP(psi, which=which2)
-            env.lbp_(max_sweeps=50, diff_tol=1e-8)
+        if (D2 < D and 'BP' not in which2) or 'BP' not in which:
+            env = peps.EnvBP(psi, which=which2)
+            env.iterate_(max_sweeps=50, diff_tol=1e-8)
         eng, ZZ = measure_H_ctm(env, HHC)
     #
     path = Path(f"./results/{p=}/")
@@ -117,15 +117,15 @@ def run_test(p, r, D, which, D2, which2, chi):
 if __name__ == '__main__':
     ray.init()
     refs = []
-    for p in [5, 10]:
-        for r in [3, 4]:
-            for D in [16, 32]:
-                for which in ["LBP"]:
+    for p in [10]:
+        for r in [3]:
+            for D in [64, 128]:
+                for which in ["BP"]:
                     D2 = D
                     which2 = which
-                    chi = 1
+                    chi = 2
                     # run_test(p, r, D, which, D2, which2, chi)
                     job = run_test.remote(p, r, D, which, D2, which2, chi)
                     refs.append(job)
     ray.get(refs)
-    # run_test(p=5, r=3, D=8, which='LBP', D2=8, which2='LBP', chi=1)
+    # run_test(p=5, r=3, D=8, which='BP', D2=8, which2='BP', chi=1)
