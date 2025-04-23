@@ -1,6 +1,7 @@
 import numpy as np
 import yastn
 import yastn.tn.fpeps as peps
+from itertools import groupby
 
 
 def gates_from_HH(HH, step):
@@ -29,6 +30,33 @@ def gates_from_HH(HH, step):
         # nn.append(peps.gates.decompose_nn_gate(G01, peps.Bond(site0, site1)))
 
     return peps.Gates(nn=nn, local=local)
+
+
+def gates_from_HH2(HH, step):
+    gates = gates_from_HH(HH, step)
+    local = sorted(gates.local, key=lambda x: x.site)
+    nn = sorted(gates.nn, key=lambda x: x.bond)
+
+    new_local = []
+    for st, gr in groupby(local, key=lambda x: x.site):
+        gr = list(gr)
+        G0 = gr[0].G
+        for gg in gr[1:]:
+            G0 = G0 @ gg.G
+        new_local.append(peps.Gate_local(G0, st))
+
+    new_nn = []
+    for bd, gr in groupby(nn, key=lambda x: x.bond):
+        gr = list(gr)
+        G01 = yastn.ncon([gr[0].G0, gr[0].G1], [(-0, -2, 1), (-1, -3, 1)])
+        for gg in gr[1:]:
+            tmp = yastn.ncon([gg.G0, gg.G1], [(-0, -2, 1), (-1, -3, 1)])
+            G01 = yastn.tensordot(G01, tmp, axes=((2, 3), (0, 1)))
+        new_nn.append(peps.gates.decompose_nn_gate(G01, bd))
+    
+    return peps.Gates(nn=new_nn, local=new_local)
+
+
 
 
 def measure_H_ctm(env_ctm, HH):
