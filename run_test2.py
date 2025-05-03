@@ -8,17 +8,24 @@ import time
 import numpy as np
 import yastn.tn.mps as mps
 import yastn.tn.fpeps as peps
-from routines import NSpin12, MapHex127_r4, MapHex127_r3, gates_from_HH2, measure_H_ctm, measure_H_mps
+from routines import NSpin12, MapHex127_r4, MapHex127_r3, gates_from_HH, gates_from_HH2, measure_H_ctm, measure_H_mps
 
 
-@ray.remote(num_cpus=18)
+@ray.remote(num_cpus=4)
 def run_test(p, r, D, which, D2, which2, chi):
     #
     print(f"Starting {p=} {r=} {D=} {which=} {D2=} {which2=} {chi=}")
     keep_time = time.time()
     #
-    fname = f"./problems/transfer_Hamiltonian_ibm_kyiv_0_angles_16_0_p_{p}.pkl"
-    data = np.load(fname, allow_pickle=True)
+
+    if p < 5:
+        fname = f"./problems/transfer_Hamiltonian_ibm_kyiv_0_angles_16_0_p_5.pkl"
+        data = np.load(fname, allow_pickle=True)
+        data['gamma'] = [2.955984139930106, 2.8123696023056692] # data['gamma'][:p]
+        data['beta'] = [0.48912372014861294, 0.2736708779840032] # data['beta'][:p]
+    else:
+        fname = f"./problems/transfer_Hamiltonian_ibm_kyiv_0_angles_16_0_p_{p}.pkl"
+        data = np.load(fname, allow_pickle=True)
     HC = data["H"]
     HM = {(n,): 1 for n in range(127)}
     ops = NSpin12(sym='dense')
@@ -45,7 +52,7 @@ def run_test(p, r, D, which, D2, which2, chi):
     opts_svd_evol = {"D_total": D, "tol": 1e-12}
     env = peps.EnvBP(psi, which=which) if "BP" in which else peps.EnvNTU(psi, which=which)
     if "BP" in which:
-        env.iterate_(max_sweeps=50, diff_tol=1e-8)
+        env.iterate_(max_sweeps=100, diff_tol=1e-8)
     #
     infoss = []
     t0 = time.time()
@@ -55,11 +62,11 @@ def run_test(p, r, D, which, D2, which2, chi):
         infos = peps.evolution_step_(env, gates, opts_svd=opts_svd_evol, symmetrize=False)
         infoss.append(infos)
         if "BP" in which:
-            env.iterate_(max_sweeps=50, diff_tol=1e-8)
+            env.iterate_(max_sweeps=100, diff_tol=1e-8)
         gates = gates_from_HH2(HHM, beta)
         infos = peps.evolution_step_(env, gates, opts_svd=opts_svd_evol, symmetrize=False)
         if "BP" in which:
-            env.iterate_(max_sweeps=50, diff_tol=1e-8)
+            env.iterate_(max_sweeps=100, diff_tol=1e-8)
         Delta = peps.accumulated_truncation_error(infoss, statistics='mean')
         print(f"Step: {step}; Evolution time: {time.time() - t0:3.2f}; Truncation error: {Delta:0.6f}")
     #
@@ -108,20 +115,20 @@ def run_test(p, r, D, which, D2, which2, chi):
             writer.writeheader()
         writer.writerow(out)
 
+    fname = path / f"results_{p=}_{r=}_{D=}_{which=}_{chi=}.npy"
+    np.save(fname, ZZ)
+
 
 if __name__ == '__main__':
     ray.init()
     refs = []
-    for p in [20]:
-        for r in [3,]:
-            for D in [128]:
+    for p in [2]:
+        for r in [3]:
+            for D in [4]:
                 for which in ["BP"]:
-                    # chi = D
-                    for chi in [1,]:
+                    for chi in [16, 32]:
                         D2 = D
                         which2 = which
-                        # run_test(p, r, D, which, D2, which2, chi)
                         job = run_test.remote(p, r, D, which, D2, which2, chi)
                         refs.append(job)
     ray.get(refs)
-    # run_test(p=5, r=3, D=8, which='BP', D2=8, which2='BP', chi=1)

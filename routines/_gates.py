@@ -10,12 +10,15 @@ def gates_from_HH(HH, step):
     local = []
     for val, site, op, inds in HH['local']:
         II = op @ op
+        assert (II - II @ II).norm() < 1e-10
         G = np.cos(val * step) * II - 1j * np.sin(val * step) * op
         local.append(peps.Gate_local(G, site))
 
     nn = []
     for val, site0, op0, site1, op1, inds in HH['nn']:
         I0, I1 = op0 @ op0, op1 @ op1
+        assert (I0 - I0 @ I0).norm() < 1e-10
+        assert (I1 - I1 @ I1).norm() < 1e-10
         I0 = I0.add_leg(axis=2, s=1)
         op0 = op0.add_leg(axis=2, s=1)
         I1 = I1.add_leg(axis=2, s=-1)
