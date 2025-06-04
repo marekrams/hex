@@ -206,38 +206,35 @@ def run_sample(done, qpu, ang, les, p, D, which, chi, number):
 
     print(f"Sampling {number} took {time.time() - t0:3.2f}")
 
-
 if __name__ == '__main__':
     ray.init()
 
     number = 1000
     refs = []
     evo_job = {}
-    for p in range(1, 37):
-        for D in [8, 32]: # [4, 8, 16, 32]:
-            for ang in [16, ]:
-                for les in [0, ]: # 1, 2, 3, 4, 5, 6, 7, 8, 9, 'pos.', 'neg.']:
+    for ang in ['27', ]:
+        for les in [0]:  # 1, 2, 3, 4, 5, 6, 7, 8, 9, 'pos.', 'neg.'
+          for p in range(1, 8):
+        # for les, p in [(0, 5), (0, 10), (0, 15), (0, 20), (0, 25),
+        #                (1, 5), (1, 10), (1, 15), (1, 20), (1, 25)]:
+        # for les, p in [(2, 28), (3, 38), (4, 32), (5, 34), (6, 49), (7, 25), (8, 33), (9, 49), ('pos.', 23), ('neg.', 14)]:
+            for D in [2, 4, 8, 16, 32]: # [4, 8, 16, 32]:            
+                #for les in [2, ]: # 1, 2, 3, 4, 5, 6, 7, 8, 9, 'pos.', 'neg.']:
                     for qpu in ["kyiv", "torino", "fez"]:
-                        # evo_job[qpu, ang, les, p, D] = run_evolution.remote(qpu, ang, les, p, D)
-                        # refs.append(evo_job[qpu, ang, les, p, D])
-                        # # for chi in [2, 4, 8]:
+                        evo_job[qpu, ang, les, p, D] = run_evolution.remote(qpu, ang, les, p, D)
+                        refs.append(evo_job[qpu, ang, les, p, D])
+                        # for chi in [2, 4, 8]:
                         #     evo_job[qpu, 16, 0, p, D, "CTM", chi] = run_env.remote(evo_job[qpu, ang, les, p, D], qpu, 16, 0, p, D, "CTM", chi)
                         #     refs.append(evo_job[qpu, 16, 0, p, D, "CTM", chi])
-                        #     evo_job[qpu, 16, 0, p, D, "MPS", chi] = run_env.remote(evo_job[qpu, ang, les, p, D], qpu, 16, 0, p, D, "MPS", chi)
+                        # #     evo_job[qpu, 16, 0, p, D, "MPS", chi] = run_env.remote(evo_job[qpu, ang, les, p, D], qpu, 16, 0, p, D, "MPS", chi)
                         #     refs.append(evo_job[qpu, 16, 0, p, D, "MPS", chi])
                         
-                        for chi in [2]:
-                            # evo_job[qpu, 16, 0, p, D, "CTM", chi]
-                            job = run_sample.remote(True, qpu, 16, 0, p, D, "CTM", chi, number)
-                            refs.append(job)
-                            # job  = run_sample.remote(evo_job[qpu, 16, 0, p, D, "MPS", chi], qpu, 16, 0, p, D, "MPS", chi, number)
-                            # refs.append(job)
+                        # for chi in [2]:
+                        #     # evo_job[qpu, 16, 0, p, D, "CTM", chi]
+                        #     job = run_sample.remote(True, qpu, 16, 0, p, D, "CTM", chi, number)
+                        #     refs.append(job)
+                        #     # job  = run_sample.remote(evo_job[qpu, 16, 0, p, D, "MPS", chi], qpu, 16, 0, p, D, "MPS", chi, number)
+                        #     # refs.append(job)
         
     ray.get(refs)
                         
-    # job = run_sample.remote(qpu, 16, 0, p, D, "CTM", 4, 20)
-    # refs.append(job)
-    # job = run_sample.remote(qpu, 16, 0, p, D, "MPS", 4, 5)
-    # refs.append(job)
-
-
