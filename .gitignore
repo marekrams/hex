@@ -1,5 +1,7 @@
 *.txt
-results/
+env_*
+state_*
+results_*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
