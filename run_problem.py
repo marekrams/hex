@@ -212,18 +212,18 @@ if __name__ == '__main__':
     number = 1000
     refs = []
     evo_job = {}
-    for ang in ['27', '16']:
-        for les in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'pos.', 'neg.']:
-            for p in range(1, 8):
+    for ang in ['16']:
+        for les in [1,]:
+            for p in range(1, 46):
                 for D in [2, 4, 8, 16, 32]:            
                     for qpu in ["kyiv", "torino", "fez"]:
                         evo_job[qpu, ang, les, p, D] = run_evolution.remote(qpu, ang, les, p, D)
                         refs.append(evo_job[qpu, ang, les, p, D])
-                        for chi in [2, 4, 8]:
-                            job = run_env.remote(evo_job[qpu, ang, les, p, D], qpu, ang, les, p, D, "CTM", chi)
-                            # evo_job[qpu, ang, les, p, D, "CTM", chi] = run_env.remote(evo_job[qpu, ang, les, p, D], qpu, ang, les, p, D, "CTM", chi)
-                            refs.append(job)
-                        # #     evo_job[qpu, ang, les, p, D, "MPS", chi] = run_env.remote(evo_job[qpu, ang, les, p, D], qpu, ang, les, p, D, "MPS", chi)
+                        # for chi in [2, 4, 8]:
+                        #     job = run_env.remote(evo_job[qpu, ang, les, p, D], qpu, ang, les, p, D, "CTM", chi)
+                        #     # evo_job[qpu, ang, les, p, D, "CTM", chi] = run_env.remote(evo_job[qpu, ang, les, p, D], qpu, ang, les, p, D, "CTM", chi)
+                        #     refs.append(job)
+                        # # #     evo_job[qpu, ang, les, p, D, "MPS", chi] = run_env.remote(evo_job[qpu, ang, les, p, D], qpu, ang, les, p, D, "MPS", chi)
                         #     refs.append(evo_job[qpu, ang, les, p, D, "MPS", chi])
                         
                         # for chi in [2]:
