@@ -25,14 +25,20 @@ def run_evolution(qpu, ang, les, p, D):
     HC = data["H"]
     HM = {(n,): 1 for n in range(Nspins[qpu])}
     #
+    fname2 = Path(f"./results/{data['Hamiltonian_name']}/{ang}_{les}/{p=}/results_{D=}_BP_chi=1.npy")
+    
+
     fname = Path(f"./results/{data['Hamiltonian_name']}/{ang}_{les}/{p=}/state_{D=}.npy")
-    if fname.is_file():
-        print(f"Evolution {qpu=} {ang=} {les=} {p=} {D=} was already done")
+    if fname2.is_file():
+        print(f"Evolution {qpu=} {ang=} {les=} {p=} {D=} was already done!")
         return True
     #
     file = open(f"./problems/QAOA_angles/{ang}.txt", "r")
     angles = ast.literal_eval(file.read())
     file.close()
+    if len(angles[les]) < p:
+        return False
+
     angles = angles[les][p - 1]
     betas   = angles[:len(angles)//2]
     gammas  = angles[len(angles)//2:]
@@ -213,16 +219,16 @@ if __name__ == '__main__':
     refs = []
     evo_job = {}
     for ang in ['16']:
-        for les in [1,]:
-            for p in range(1, 46):
-                for D in [4, 8, 16, 32]:            
+        for les in [2,3,4,5,6,7,8,9,'pos.', 'neg.']:
+            for p in range(1, 60):
+                for D in [32]:            
                     for qpu in ["kyiv", "torino", "fez"]:
                         evo_job[qpu, ang, les, p, D] = run_evolution.remote(qpu, ang, les, p, D)
                         refs.append(evo_job[qpu, ang, les, p, D])
-                        for chi in [2, 4, 8]:
-                            job = run_env.remote(evo_job[qpu, ang, les, p, D], qpu, ang, les, p, D, "CTM", chi)
-                            evo_job[qpu, ang, les, p, D, "CTM", chi] = run_env.remote(evo_job[qpu, ang, les, p, D], qpu, ang, les, p, D, "CTM", chi)
-                            refs.append(job)
+                        # for chi in [2, 4, 8]:
+                        #     job = run_env.remote(evo_job[qpu, ang, les, p, D], qpu, ang, les, p, D, "CTM", chi)
+                        #     evo_job[qpu, ang, les, p, D, "CTM", chi] = run_env.remote(evo_job[qpu, ang, les, p, D], qpu, ang, les, p, D, "CTM", chi)
+                        #     refs.append(job)
                         # # #     evo_job[qpu, ang, les, p, D, "MPS", chi] = run_env.remote(evo_job[qpu, ang, les, p, D], qpu, ang, les, p, D, "MPS", chi)
                         #     refs.append(evo_job[qpu, ang, les, p, D, "MPS", chi])
                         
