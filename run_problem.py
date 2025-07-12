@@ -221,7 +221,7 @@ if __name__ == '__main__':
     for ang in ['16']:
         for les in [2,3,4,5,6,7,8,9,'pos.', 'neg.']:
             for p in range(1, 60):
-                for D in [32]:            
+                for D in [64]:            
                     for qpu in ["kyiv", "torino", "fez"]:
                         evo_job[qpu, ang, les, p, D] = run_evolution.remote(qpu, ang, les, p, D)
                         refs.append(evo_job[qpu, ang, les, p, D])
