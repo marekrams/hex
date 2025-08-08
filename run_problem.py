@@ -214,7 +214,7 @@ def run_sample(done, qpu, ang, les, p, D, which, chi, number):
 
 
 
-@ray.remote(num_cpus=1)
+@ray.remote(num_cpus=2)
 def run_evolution_sample(qpu, ang, les, p, D, number):
     #
     print(f"Evolution {qpu=} {ang=} {les=} {p=} {D=}")
@@ -237,6 +237,14 @@ def run_evolution_sample(qpu, ang, les, p, D, number):
     file.close()
     if len(angles[les]) < p:
         return False
+    #
+    path = Path(f"./results/{data['Hamiltonian_name']}/{ang}_{les}/{p=}/")
+    path.mkdir(parents=True, exist_ok=True)
+    fname = path / f"samples_{D=}_BP_chi=1.npy"
+    if os.path.isfile(fname):
+        print(f"Sampling for {qpu=} {ang=} {les=} {p=} {D=} was already done !!!! ")
+        return True
+
 
     angles = angles[les][p - 1]
     betas   = angles[:len(angles)//2]
@@ -274,8 +282,6 @@ def run_evolution_sample(qpu, ang, les, p, D, number):
         Delta = peps.accumulated_truncation_error(infoss, statistics='mean')
         # print(f"Step: {step}; Evolution time: {time.time() - t0:3.2f}; Truncation error: {Delta:0.6f}")
     #
-    path = Path(f"./results/{data['Hamiltonian_name']}/{ang}_{les}/{p=}/")
-    path.mkdir(parents=True, exist_ok=True)
     #
     fname = path / f"state_{D=}.npy"
     dd = {"psi": psi.save_to_dict(), "infos": infos, "Delta": Delta}
@@ -346,9 +352,9 @@ if __name__ == '__main__':
     refs = []
     evo_job = {}
     for ang in ['16']:
-        for les in [1,2,3,4,5,6,7,8,9,'pos.', 'neg.']:
+        for les in [0, 1,2,3,4,5,6,7,8,9,'pos.', 'neg.']:
             for p in range(1, 60):
-                for D in [32]:            
+                for D in [64]:            
                     for qpu in ["kyiv", "torino", "fez"]:
                         # evo_job[qpu, ang, les, p, D] = run_evolution.remote(qpu, ang, les, p, D)
                         # refs.append(evo_job[qpu, ang, les, p, D])
