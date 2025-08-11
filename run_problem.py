@@ -351,9 +351,9 @@ if __name__ == '__main__':
     number = 1000
     refs = []
     evo_job = {}
-    for ang in ['16']:
+    for ang in ['27']:
         for les in [0, 1,2,3,4,5,6,7,8,9,'pos.', 'neg.']:
-            for p in range(1, 60):
+            for p in range(1, 20):
                 for D in [64]:            
                     for qpu in ["kyiv", "torino", "fez"]:
                         # evo_job[qpu, ang, les, p, D] = run_evolution.remote(qpu, ang, les, p, D)
