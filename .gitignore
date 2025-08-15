@@ -1,7 +1,7 @@
 *.txt
 env_*
 state_*
-results_*
+results_D*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
